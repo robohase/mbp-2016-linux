@@ -270,8 +270,26 @@ Not working out of the box, but thanks to @roadrunner2 basic functionality
 is working using the `apple-ib-tb` kernel module you can find in the following
 git repository: https://github.com/roadrunner2/macbook12-spi-driver
 
-Starting with Linux 5.9 a forked version of the driver is necessary, which is
-available at https://github.com/PatrickVerner/macbook12-spi-driver
+Starting with Linux 5.9 a forked version of the driver is necessary. The
+previously recommended fork (PatrickVerner/macbook12-spi-driver) has been
+deleted. A fork which still builds on recent kernels is available at
+https://github.com/Redecorating/apple-ib-drv (branch `mbp15`). It has been
+tested with Linux 6.8 (Ubuntu 22.04) on a MacBookPro13,2. On Linux 6.2 and
+newer the ACPI `remove` callback changed its return type from `int` to `void`,
+so `appleib_remove()` in `apple-ibridge.c` needs a small adjustment before it
+compiles (see https://github.com/robohase/apple-ib-drv/tree/kernel-6.2-compat).
+
+On some machines the iBridge USB device (`05ac:8600`) is enumerated without a
+USB configuration after boot (`bConfigurationValue` in sysfs is empty). In that
+case no HID interfaces show up and the driver never binds. Re-binding the
+device fixes this:
+
+    echo 1-3 > /sys/bus/usb/drivers/usb/unbind
+    echo 1-3 > /sys/bus/usb/drivers/usb/bind
+
+Replace `1-3` with the bus/port of the iBridge device as shown by `lsusb -t`.
+Running this from a udev rule or a systemd unit at boot makes the Touch Bar
+work without manual intervention.
 
 Missing is as of now just the advanced functionality with custom graphics Apple
 offers in macOS.
